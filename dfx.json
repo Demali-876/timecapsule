@@ -1,0 +1,29 @@
+{
+  "canisters": {
+    "timecapsule_backend": {
+      "main": "src/timecapsule_backend/main.mo",
+      "type": "motoko"
+    },
+    "timecapsule_frontend": {
+      "dependencies": [
+        "timecapsule_backend"
+      ],
+      "frontend": {
+        "entrypoint": "src/timecapsule_frontend/src/index.html"
+      },
+      "source": [
+        "src/timecapsule_frontend/assets",
+        "dist/timecapsule_frontend/"
+      ],
+      "type": "assets"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}
