@@ -288,5 +288,47 @@ actor timeCapsuleDAO {
             };
         };
     };
-    
+    public shared({caller}) func transferCapsule(capsuleId: TimeCapsuleId, to: Principal) : async Result<TimeCapsuleId, Text> {
+        switch (dao.get(caller)) {
+            case (null) {
+                return #err("The caller is not a member - cannot initiate transfer");
+            };
+            case (?member) {
+                switch (capsuleLedger.get(capsuleId)) {
+                    case (null) {
+                    return #err("Capsule does not exist");
+                    };
+                    case (?capsule){
+                        switch (capsule.owner == caller){
+                            case(true){
+                                let tokenBalance = await balanceOf(caller);
+                                if (tokenBalance < 1) {
+                                    return #err("Not enough tokens to complete the transfer");
+                                };
+                                switch (await burn(caller, 1)) {
+                                    case (#ok) {
+                                        let updatedCapsule = {
+                                            id = capsule.id;
+                                            content = capsule.content;
+                                            owner = to; // New owner
+                                            unlockDate = capsule.unlockDate;
+                                            created = capsule.created;
+                                        };
+                                        capsuleLedger.put(capsuleId, updatedCapsule);
+                                    return #ok(capsuleId);
+                                    };
+                                    case (#err(_)) {
+                                    return #err("Failed to burn token for transfer");
+                                    };
+                                };
+                            };
+                            case(false){
+                            return #err("Caller does not own the capsule - cannot transfer");
+                            };
+                        };
+                    };
+                };
+            };
+        };
+    };
 };
