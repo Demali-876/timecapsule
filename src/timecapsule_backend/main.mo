@@ -7,6 +7,7 @@ import Principal "mo:base/Principal";
 import Option "mo:base/Option";
 import Nat64 "mo:base/Nat64";
 import Types "types";
+import Array "mo:base/Array";
 
 actor timeCapsuleDAO {
 
@@ -27,6 +28,7 @@ actor timeCapsuleDAO {
   let name = "Time Capsule Network";
   var manifesto = " To preserve and share humanity's collective memory across generations by leveraging blockchain technology";
   let goals = Buffer.Buffer<Text>(0);
+  let requests = Buffer.Buffer<Text>(0);
 
   public shared query func getName() : async Text {
         return name;
@@ -164,7 +166,29 @@ actor timeCapsuleDAO {
     public query func getAllProposals() : async [Proposal] {
         return Iter.toArray(proposals.vals());
     };
-    
+    private func executeProposal(content : ProposalContent) : () {
+        switch (content) {
+            case (#ChangeManifesto(newManifesto)) {
+                manifesto := newManifesto;
+            };
+            case (#AddGoal(newGoal)) {
+                goals.add(newGoal);
+            };
+            case(#FeatureRequest(newRequest)) {
+                requests.add(newRequest);
+            };
+        };
+        return;
+    };
+    func _hasVoted(proposal : Proposal, member : Principal) : Bool {
+        return Array.find<Vote>(
+            proposal.votes,
+            func(vote : Vote) {
+                return vote.member == member;
+            },
+        ) != null;
+    };
+
 
 
 };
