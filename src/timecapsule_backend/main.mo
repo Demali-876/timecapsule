@@ -257,4 +257,36 @@ actor timeCapsuleDAO {
             };
         };
     };
+    var nextCapsuleId : Nat64 = 0;
+    let capsuleLedger = HashMap.HashMap<TimeCapsuleId, TimeCapsule>(0, Nat64.equal, Nat64.toNat32);
+    public shared ({ caller }) func createCapsule(content: TimeCapsuleContentType, unlockDate: UnlockDate) : async Result<TimeCapsuleId, Text> {
+        switch(dao.get(caller)){
+            case(null){
+                return #err("The caller is not a member - cannot create a Capsule");
+            };
+            case(?member){
+                let tokenbalance = await balanceOf(caller);
+                if (tokenbalance < 1){
+                    return #err("Not enough tokens to create a Capsule");
+                };
+                switch(await burn(caller,1)){
+                    case(#ok){
+                        let capsuleId = nextCapsuleId;
+                        let capsule : TimeCapsule ={
+                            id = nextCapsuleId;
+                            content = content;
+                            owner = caller;
+                            unlockDate = unlockDate;
+                            created = Time.now();
+                        };
+                        capsuleLedger.put(capsuleId, capsule);
+                        nextCapsuleId += 1;
+                        return #ok(capsuleId);
+                    };
+                    case (#err(_)){return #err("Failed to burn Tokens and create capsule");};
+                };
+            };
+        };
+    };
+    
 };

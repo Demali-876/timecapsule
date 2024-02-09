@@ -19,10 +19,9 @@ module {
     ///////////////////
     // Time Capsule //
     //////////////////
-    public type TimeCapsuleId = Nat;
+    public type TimeCapsuleId = Nat64;
     public type UnlockDate = Time.Time;
 
-    // For simplicity, consider more complex structures for actual use.
     public type TimeCapsuleContentType = {
     #PlainText: Text;
     #StructuredText: StructuredContent;
