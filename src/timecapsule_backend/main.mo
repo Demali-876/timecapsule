@@ -214,11 +214,11 @@ actor timeCapsuleDAO {
                         };
                         let votingPower = await balanceOf(caller);
                         let totalVotingPower = await totalSupply();
-                        var newYesVotes = 0;
-                        var newNoVotes = 0;
+                        var newYesVotes = proposal.yesVotes;
+                        var newNoVotes = proposal.noVotes;
                         switch (vote.yesOrNo) {
-                            case (true) { newYesVotes := proposal.yesVotes + votingPower;  };
-                            case (false) { newNoVotes := proposal.noVotes + votingPower; };
+                            case (true) { newYesVotes += votingPower;  };
+                            case (false) { newNoVotes += votingPower; };
                         };
                         let newVoteScore = proposal.voteScore + votingPower;
                         let requiredMajority = totalVotingPower / 2 +1;
@@ -257,5 +257,4 @@ actor timeCapsuleDAO {
             };
         };
     };
-    
 };
