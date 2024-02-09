@@ -66,7 +66,9 @@ module {
         created: Time.Time; // The time the proposal was created
         executed: ?Time.Time; // The time the proposal was executed or null if not executed
         votes: [Vote]; // The votes on the proposal so far
-        voteScore: Int; // A score based on the votes
+        voteScore: Nat; // A score based on the votes
+        yesVotes: Nat;
+        noVotes: Nat;
         status: ProposalStatus; // The current status of the proposal
     };
     

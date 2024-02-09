@@ -6,6 +6,7 @@ import Iter "mo:base/Iter";
 import Principal "mo:base/Principal";
 import Option "mo:base/Option";
 import Nat64 "mo:base/Nat64";
+import Nat32 "mo:base/Nat32";
 import Types "types";
 import Array "mo:base/Array";
 
@@ -149,6 +150,8 @@ actor timeCapsuleDAO {
                         executed = null;
                         votes = [];
                         voteScore = 0;
+                        noVotes = 0;
+                        yesVotes = 0;
                         status = #Open;
                     };
                     proposals.put(proposalId, proposal);
@@ -166,7 +169,7 @@ actor timeCapsuleDAO {
     public query func getAllProposals() : async [Proposal] {
         return Iter.toArray(proposals.vals());
     };
-    private func executeProposal(content : ProposalContent) : () {
+    private func _executeProposal(content : ProposalContent) : () {
         switch (content) {
             case (#ChangeManifesto(newManifesto)) {
                 manifesto := newManifesto;
@@ -180,7 +183,7 @@ actor timeCapsuleDAO {
         };
         return;
     };
-    func _hasVoted(proposal : Proposal, member : Principal) : Bool {
+    private func _hasVoted(proposal : Proposal, member : Principal) : Bool {
         return Array.find<Vote>(
             proposal.votes,
             func(vote : Vote) {
@@ -188,7 +191,71 @@ actor timeCapsuleDAO {
             },
         ) != null;
     };
-
-
-
+    public shared ({ caller }) func voteProposal(proposalId : ProposalId, vote : Vote) : async Result<(), Text> {
+        // Check if the caller is a member of the DAO
+        switch (dao.get(caller)) {
+            case (null) {
+                return #err("The caller is not a member - canno vote one proposal");
+            };
+            case (?member) {
+                // Check if the proposal exists
+                switch (proposals.get(proposalId)) {
+                    case (null) {
+                        return #err("The proposal does not exist");
+                    };
+                    case (?proposal) {
+                        // Check if the proposal is open for voting
+                        if (proposal.status != #Open) {
+                            return #err("The proposal is not open for voting");
+                        };
+                        // Check if the caller has already voted
+                        if (_hasVoted(proposal, caller)) {
+                            return #err("The caller has already voted on this proposal");
+                        };
+                        let votingPower = await balanceOf(caller);
+                        let totalVotingPower = await totalSupply();
+                        var newYesVotes = 0;
+                        var newNoVotes = 0;
+                        switch (vote.yesOrNo) {
+                            case (true) { newYesVotes := proposal.yesVotes + votingPower;  };
+                            case (false) { newNoVotes := proposal.noVotes + votingPower; };
+                        };
+                        let newVoteScore = proposal.voteScore + votingPower;
+                        let requiredMajority = totalVotingPower / 2 +1;
+                        var newExecuted : ?Time.Time = null;
+                        let newVotes = Buffer.fromArray<Vote>(proposal.votes);
+                        let newStatus = if (proposal.yesVotes >= requiredMajority) {
+                            #Accepted;
+                        } else if (proposal.noVotes >= requiredMajority) {
+                            #Rejected;
+                        } else {
+                            #Open;
+                        };
+                        switch (newStatus) {
+                            case (#Accepted) {
+                                _executeProposal(proposal.content);
+                                newExecuted := ?Time.now();
+                            };
+                            case (_) {};
+                        };
+                        let newProposal : Proposal = {
+                            id = proposal.id;
+                            content = proposal.content;
+                            creator = proposal.creator;
+                            created = proposal.created;
+                            executed = newExecuted;
+                            votes = Buffer.toArray(newVotes);
+                            voteScore = newVoteScore;
+                            yesVotes = newYesVotes;
+                            noVotes = newNoVotes;
+                            status = newStatus;
+                        };
+                        proposals.put(proposal.id, newProposal);
+                        return #ok();
+                    };
+                };
+            };
+        };
+    };
+    
 };
