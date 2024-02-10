@@ -14,6 +14,7 @@ module {
         username: Text;
         bio : Text;
         capsules: [TimeCapsuleId];
+        following: [TimeCapsuleId];
     };
 
     ///////////////////
@@ -40,6 +41,7 @@ module {
         owner: Principal;
         unlockDate: UnlockDate;
         created: Time.Time;
+        followers: [Principal];
     };
 
     ///////////////////

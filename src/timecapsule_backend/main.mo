@@ -99,15 +99,13 @@ actor timeCapsuleDAO {
   public shared ({ caller }) func registerMember(username: Text, bio: Text) : async Result<(), Text> {
         switch (dao.get(caller)) {
             case (null) {
-                // Proceed with registration as the member does not exist
                 let newMember : Member = {
                     username = username;
                     bio = bio;
-                    capsules = []; // Initialize with an empty list of capsules
+                    capsules = [];
+                    following = [];
                 };
-                // Add the new member to the registry
                 dao.put(caller, newMember);
-                // Airdrop tokens to the new member and handle the result
                 switch (await mint(caller, 10)) {
                     case (#ok) {
                         return #ok();
@@ -118,14 +116,53 @@ actor timeCapsuleDAO {
                 };
             };
             case (_) {
-                // Return an error if the member already exists
                 return #err("Member already exists");
               };
       };
-  };
-  var nextProposalId : Nat64 = 0;
-  let proposals = HashMap.HashMap<ProposalId, Proposal>(0, Nat64.equal, Nat64.toNat32);
-  public shared ({ caller }) func createProposal(content: ProposalContent) : async Result<ProposalId, Text> {
+    };
+    public shared ({ caller }) func updateMember(updatedMember : Member) : async Result<(), Text> {
+        switch (dao.get(caller)) {
+            case (null) {
+                return #err("Member does not exist");
+            };
+            case (?member) {
+                dao.put(caller, updatedMember);
+                return #ok();
+            };
+        };
+    };
+    public shared ({ caller }) func removeMember() : async Result<(), Text> {
+        switch (dao.get(caller)) {
+            case (null) {
+                return #err("Member does not exist");
+            };
+            case (?member) {
+                dao.delete(caller);
+                return #ok();
+            };
+        };
+    };
+    public query func getMember(p : Principal) : async Result<Member, Text> {
+        switch (dao.get(p)) {
+            case (null) {
+                return #err("Member does not exist");
+            };
+            case (?member) {
+                return #ok(member);
+            };
+        };
+    };
+
+    public query func getAllMembers() : async [Member] {
+        return Iter.toArray(dao.vals());
+    };
+
+    public query func numberOfMembers() : async Nat {
+        return dao.size();
+    };
+    var nextProposalId : Nat64 = 0;
+    let proposals = HashMap.HashMap<ProposalId, Proposal>(0, Nat64.equal, Nat64.toNat32);
+    public shared ({ caller }) func createProposal(content: ProposalContent) : async Result<ProposalId, Text> {
     // Check if the caller is a registered member
     switch (dao.get(caller)) {
         case (null) {
@@ -155,7 +192,7 @@ actor timeCapsuleDAO {
                         status = #Open;
                     };
                     proposals.put(proposalId, proposal);
-                    nextProposalId += 1; // Increment the proposal ID for the next proposal
+                    nextProposalId += 1;
                     return #ok(proposalId);
                 };
                 case (#err(_)) {return #err("Failed to burn tokens");};
@@ -163,6 +200,7 @@ actor timeCapsuleDAO {
             };
         };
     };
+    
     public query func getProposal(proposalId : ProposalId) : async ?Proposal {
         return proposals.get(proposalId);
     };
@@ -257,6 +295,7 @@ actor timeCapsuleDAO {
             };
         };
     };
+
     var nextCapsuleId : Nat64 = 0;
     let capsuleLedger = HashMap.HashMap<TimeCapsuleId, TimeCapsule>(0, Nat64.equal, Nat64.toNat32);
     public shared ({ caller }) func createCapsule(content: TimeCapsuleContentType, unlockDate: UnlockDate) : async Result<TimeCapsuleId, Text> {
@@ -278,8 +317,10 @@ actor timeCapsuleDAO {
                             owner = caller;
                             unlockDate = unlockDate;
                             created = Time.now();
+                            followers = [];
                         };
                         capsuleLedger.put(capsuleId, capsule);
+                        let updatedMemberCapsules = Array.append<TimeCapsuleId>(member.capsules, [capsuleId]);
                         nextCapsuleId += 1;
                         return #ok(capsuleId);
                     };
@@ -313,6 +354,7 @@ actor timeCapsuleDAO {
                                             owner = to; // New owner
                                             unlockDate = capsule.unlockDate;
                                             created = capsule.created;
+                                            followers = capsule.followers;
                                         };
                                         capsuleLedger.put(capsuleId, updatedCapsule);
                                     return #ok(capsuleId);
@@ -324,6 +366,72 @@ actor timeCapsuleDAO {
                             };
                             case(false){
                             return #err("Caller does not own the capsule - cannot transfer");
+                            };
+                        };
+                    };
+                };
+            };
+        };
+    };
+
+    public query func getCapsule(id: TimeCapsuleId): async ?TimeCapsule {
+    return capsuleLedger.get(id);
+    };
+    public query func getAllCapsules() : async [TimeCapsule] {
+        return Iter.toArray(capsuleLedger.vals());
+    };
+    public shared ({ caller }) func updateCapsule(capsuleId: TimeCapsuleId,updatedCapsule : TimeCapsule) : async Result<(), Text> {
+        switch (dao.get(caller)) {
+            case (null) {
+                return #err("Member does not exist");
+            };
+            case (?capsule) {
+                capsuleLedger.put(capsuleId, updatedCapsule);
+                return #ok();
+            };
+        };
+    };
+    public shared({caller}) func followCapsule(capsuleId: TimeCapsuleId) : async Result<(), Text> {
+        switch(dao.get(caller)){
+            case(null){
+                return #err("The caller is not a member - cannot follow the capsule");
+            };
+            case(?member){
+                switch(capsuleLedger.get(capsuleId)){
+                    case(null){
+                        return #err("Capsule does not exist");
+                    };
+                    case(?capsule){
+                        let alreadyFollowing = Array.find<TimeCapsuleId>(member.following, func (id) : Bool { id == capsuleId }) != null;
+                        switch(alreadyFollowing){
+                            case(true){
+                                return #err("Already following this capsule");
+                            };
+                            case(false){
+                                let updatedFollowing = Array.append<TimeCapsuleId>(member.following, [capsuleId]);
+                                let updatedMember = {
+                                    username = member.username;
+                                    bio = member.bio;
+                                    capsules = member.capsules;
+                                    following = updatedFollowing;
+                                };
+                                let updatedFollowers = Array.append<Principal>(capsule.followers, [caller]);
+                                let updatedCapsule = {
+                                    id = capsule.id;
+                                    content = capsule.content;
+                                    owner = capsule.owner; 
+                                    unlockDate = capsule.unlockDate;
+                                    created = capsule.created;
+                                    followers = updatedFollowers;
+                                };
+                                switch (await updateCapsule(capsule.id,updatedCapsule)){
+                                    case(#ok){return #ok()};
+                                    case(_){return #err("error following capusule")};
+                                };
+                                switch (await updateMember(updatedMember)){
+                                    case(#ok){return #ok()};
+                                    case(_){return #err("error following capusule")};
+                                };
                             };
                         };
                     };
