@@ -1,37 +1,49 @@
-body {
-    font-family: sans-serif;
-    font-size: 1.5rem;
+body, html {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
 }
 
-img {
-    max-width: 50vw;
-    max-height: 25vw;
-    display: block;
-    margin: auto;
-}
-
-form {
+.navbar {
     display: flex;
-    justify-content: center;
-    gap: 0.5em;
-    flex-flow: row wrap;
-    max-width: 40vw;
-    margin: auto;
-    align-items: baseline;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #024959;
+    color: white;
+    padding: 10px 20px;
 }
 
-button[type="submit"] {
-    padding: 5px 20px;
-    margin: 10px auto;
-    float: right;
+.navbar .logo {
+    width: 100px; /* Adjust based on actual logo size */
 }
 
-#greeting {
-    margin: 10px auto;
-    padding: 10px 60px;
-    border: 1px solid #222;
+.nav-links a, .personal-actions a {
+    color: white;
+    text-decoration: none;
+    padding: 10px 15px;
+    display: inline-block;
 }
 
-#greeting:empty {
-    display: none;
+.nav-links a:hover, .personal-actions a:hover, .login-logout:hover {
+    background-color: #036180;
+    border-radius: 5px;
+}
+
+.personal-actions {
+    display: flex;
+}
+
+.content {
+    padding: 20px;
+    margin-top: 20px;
+}
+
+footer {
+    background-color: #022B3A;
+    color: white;
+    text-align: center;
+    padding: 20px;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
 }

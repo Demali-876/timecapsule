@@ -3,22 +3,32 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
-    <title>timecapsule</title>
-    <base href="/" />
+    <title>Time Capsule Network</title>
     <link rel="icon" href="favicon.ico" />
     <link type="text/css" rel="stylesheet" href="main.css" />
   </head>
   <body>
+    <header>
+      <nav class="navbar">
+        <img src="logo2.svg" alt="dfinitylogo" class="logo"/>
+        <div class="nav-links">
+          <a href="#governance">Governance</a>
+          <a href="#tokens">Tokens</a>
+          <a href="#capsules">Capsules</a>
+          <!-- Placeholder for dynamic login/logout -->
+          <a href="#login" class="login-logout">Login</a>
+        </div>
+        <div class="personal-actions">
+          <a href="#create-capsule">Create Capsule</a>
+          <a href="#transfer">Transfer</a>
+          <a href="#follow-capsule">Follow Capsule</a>
+        </div>
+      </nav>
+    </header>
     <main>
-      <img src="logo2.svg" alt="DFINITY logo" />
-      <br />
-      <br />
-      <form action="#">
-        <label for="name">Enter your name: &nbsp;</label>
-        <input id="name" alt="Name" type="text" />
-        <button type="submit">Click Me!</button>
-      </form>
-      <section id="greeting"></section>
+      <section class="content">
+          <!-- Content dynamically loaded here -->
+      </section>
     </main>
   </body>
 </html>
