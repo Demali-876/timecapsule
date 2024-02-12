@@ -1,8 +1,8 @@
 # Time Capsule Network
 
-Welcome to your new timecapsule project and to the internet computer development community. By default, creating a new project adds this README and some template files to your project directory. You can edit these template files to customize your project and to include your own code to speed up the development cycle.
+Welcome to the Time Capsule project, a unique endeavor aimed at leveraging the power of the Internet Computer (IC) to create a digital preservation platform. This project is designed to enable users to encapsulate their digital memories, ideas, and assets in time-locked capsules on the blockchain, ensuring their preservation and future accessibility. By participating in this project, you're not just engaging with cutting-edge technology; you're contributing to a collective memory bank that spans generations.
 
-To get started, you might want to explore the project directory structure and the default configuration file. Working with this project in your development environment will not affect any production deployment or identity tokens.
+The Time Capsule project utilizes the decentralized nature of the Internet Computer to offer a secure, tamper-proof environment for users to create digital time capsules. These capsules can for now can contain text but eventually will allow images, videos, or any form of digital content that users wish to preserve for future retrieval. The content will be encrypted and set with an unlock date, ensuring that it remains inaccessible until the specified time.
 
 To learn more before you start working with Time Capsule Network, see the following documentation available online:
 
