@@ -51,10 +51,12 @@ Which will start a server at `http://localhost:8080`, proxying API requests to t
 
 I am excited to have you on this journey with us I build a digital legacy on the Internet Computer. Your contributions and engagement will help shape the future of digital preservation, making the Time Capsule project a cornerstone of the IC ecosystem. Let's create a lasting legacy together!
 ## Contributing
+
 Your contributions could transform the Time Capsule project into a vibrant and innovative platform. Whether you're a developer, designer, content creator, or enthusiast, there are numerous ways to contribute:
-```bash
-Code Contributions: Submit pull requests with bug fixes, feature additions, or performance enhancements.
-Documentation: Help improve or expand the project's documentation for better accessibility and understanding.
-Feedback and Ideas: Participate in discussions, provide feedback on existing features, and suggest new ideas or improvements.
+
+- **Code Contributions:** Submit pull requests with bug fixes, feature additions, or performance enhancements.
+- **Documentation:** Help improve or expand the project's documentation for better accessibility and understanding.
+- **Feedback and Ideas:** Participate in discussions, provide feedback on existing features, and suggest new ideas or improvements.
+
 ```
 
