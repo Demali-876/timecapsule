@@ -14,10 +14,15 @@ body, html {
 }
 
 .navbar .logo {
-    width: 100px; /* Adjust based on actual logo size */
+    width: 100px;
 }
 
-.nav-links a, .personal-actions a {
+.nav-links {
+    display: flex;
+    align-items: center;
+}
+
+.nav-links a, .personal-actions a, .login-logout {
     color: white;
     text-decoration: none;
     padding: 10px 15px;
@@ -30,16 +35,39 @@ body, html {
 }
 
 .personal-actions {
-    display: flex;
+    background-color: #024959; /* Matching navbar color */
+    color: white;
+    flex-direction: column;
+    margin-top: 55px;
+    padding: 10px;
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    bottom: 0; 
+    width: 200px; 
+    z-index: 1000;
+}
+.personal-actions a {
+    color: white;
+    text-decoration: none;
+    margin-top: 10px;
+    padding: 10px 15px;
+    display: block; 
+    white-space: nowrap; 
+}
+.personal-actions a:hover {
+    background-color: #036180;
+    border-radius: 5px;
 }
 
 .content {
     padding: 20px;
+    margin-left: 210px; 
     margin-top: 20px;
 }
 
 footer {
-    background-color: #022B3A;
+    background-color: #024959;
     color: white;
     text-align: center;
     padding: 20px;

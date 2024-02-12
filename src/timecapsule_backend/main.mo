@@ -19,6 +19,8 @@ actor timeCapsuleDAO {
   type ProposalContent = Types.ProposalContent;
   type ProposalId = Types.ProposalId;
   type Vote = Types.Vote;
+  type ShareableMember = Types.ShareableMember;
+  type SharedTimeCapsule = Types.SharedTimeCapsule;
   type TimeCapsuleId = Types.TimeCapsuleId;
   type UnlockDate = Types.UnlockDate;
   type TimeCapsuleContentType = Types.TimeCapsuleContentType;
@@ -39,10 +41,6 @@ actor timeCapsuleDAO {
     };
     public func setManifesto(newManifesto : Text) : async () {
         manifesto := newManifesto;
-        return;
-    };
-    public func addGoal(newGoal : Text) : async () {
-        goals.add(newGoal);
         return;
     };
     public shared query func getGoals() : async [Text] {
@@ -102,8 +100,8 @@ actor timeCapsuleDAO {
                 let newMember : Member = {
                     username = username;
                     bio = bio;
-                    capsules = [];
-                    following = [];
+                    capsules = Buffer.Buffer<TimeCapsuleId>(0);
+                    following = Buffer.Buffer<TimeCapsuleId>(0);
                 };
                 dao.put(caller, newMember);
                 switch (await mint(caller, 10)) {
@@ -120,17 +118,24 @@ actor timeCapsuleDAO {
               };
       };
     };
-    public shared ({ caller }) func updateMember(updatedMember : Member) : async Result<(), Text> {
-        switch (dao.get(caller)) {
-            case (null) {
-                return #err("Member does not exist");
+    public shared ({ caller }) func updateMember(bio: Text, username: Text) : async Result<(), Text> {
+    switch (dao.get(caller)) {
+        case (null){
+            return #err("Member does not exist");
+        };
+        case (?member){
+            let updatedMember = {
+                bio = bio;
+                username = username;
+                capsules = member.capsules;
+                following = member.following;
             };
-            case (?member) {
-                dao.put(caller, updatedMember);
-                return #ok();
+            dao.put(caller, updatedMember);
+            return #ok();
             };
         };
     };
+
     public shared ({ caller }) func removeMember() : async Result<(), Text> {
         switch (dao.get(caller)) {
             case (null) {
@@ -142,20 +147,40 @@ actor timeCapsuleDAO {
             };
         };
     };
-    public query func getMember(p : Principal) : async Result<Member, Text> {
-        switch (dao.get(p)) {
-            case (null) {
-                return #err("Member does not exist");
+    public query func getMember(p: Principal) : async Result<ShareableMember, Text> {
+    switch (dao.get(p)) {
+        case (null) {
+            return #err("Member does not exist");
+        };
+        case (?member) {
+            // Convert the Member instance to a ShareableMember
+            let shareableMember = {
+                username = member.username;
+                bio = member.bio;
+                capsules = Buffer.toArray(member.capsules);
+                following = Buffer.toArray(member.following);
             };
-            case (?member) {
-                return #ok(member);
+            return #ok(shareableMember);
             };
         };
     };
 
-    public query func getAllMembers() : async [Member] {
-        return Iter.toArray(dao.vals());
+    public query func getAllMembers() : async [ShareableMember] {
+    // Convert each Member instance in the dao to a ShareableMember
+    let shareableMembers : [ShareableMember] = Array.map(
+        Iter.toArray(dao.vals()),
+        func (member : Member) : ShareableMember {
+            return {
+                username = member.username;
+                bio = member.bio;
+                capsules = Buffer.toArray<TimeCapsuleId>(member.capsules);
+                following = Buffer.toArray<TimeCapsuleId>(member.following);
+            };
+        }
+    );
+    return shareableMembers;
     };
+
 
     public query func numberOfMembers() : async Nat {
         return dao.size();
@@ -315,12 +340,13 @@ actor timeCapsuleDAO {
                             id = nextCapsuleId;
                             content = content;
                             owner = caller;
-                            unlockDate = unlockDate;
+                            unlockDate = Time.now() + (unlockDate * 1_000_000_000);
                             created = Time.now();
-                            followers = [];
+                            followers = Buffer.Buffer<Principal>(0);
                         };
                         capsuleLedger.put(capsuleId, capsule);
-                        let updatedMemberCapsules = Array.append<TimeCapsuleId>(member.capsules, [capsuleId]);
+                        member.following.add(capsuleId);
+                        member.capsules.add(capsuleId);
                         nextCapsuleId += 1;
                         return #ok(capsuleId);
                     };
@@ -374,67 +400,130 @@ actor timeCapsuleDAO {
         };
     };
 
-    public query func getCapsule(id: TimeCapsuleId): async ?TimeCapsule {
-    return capsuleLedger.get(id);
-    };
-    public query func getAllCapsules() : async [TimeCapsule] {
-        return Iter.toArray(capsuleLedger.vals());
-    };
-    public shared ({ caller }) func updateCapsule(capsuleId: TimeCapsuleId,updatedCapsule : TimeCapsule) : async Result<(), Text> {
-        switch (dao.get(caller)) {
-            case (null) {
-                return #err("Member does not exist");
-            };
-            case (?capsule) {
-                capsuleLedger.put(capsuleId, updatedCapsule);
-                return #ok();
+    public query func getCapsule(id: TimeCapsuleId): async ?SharedTimeCapsule {
+    let maybeCapsule = capsuleLedger.get(id);
+    switch (maybeCapsule) {
+        case (null) {
+            return null;
+        };
+        case (?capsule) {
+            return ?{
+                id = capsule.id;
+                content = capsule.content;
+                owner = capsule.owner;
+                unlockDate = capsule.unlockDate;
+                created = capsule.created;
+                followers = Buffer.toArray(capsule.followers); 
+                };
             };
         };
     };
-    public shared({caller}) func followCapsule(capsuleId: TimeCapsuleId) : async Result<(), Text> {
-        switch(dao.get(caller)){
-            case(null){
-                return #err("The caller is not a member - cannot follow the capsule");
+
+    public query func getAllCapsules() : async [SharedTimeCapsule] {
+    let capsules = Iter.toArray(capsuleLedger.vals());
+    let shareableCapsules : [SharedTimeCapsule] = Array.map(capsules, func (capsule: TimeCapsule) : SharedTimeCapsule {
+        return {
+            id = capsule.id;
+            content = capsule.content;
+            owner = capsule.owner;
+            unlockDate = capsule.unlockDate;
+            created = capsule.created;
+            followers = Buffer.toArray(capsule.followers); 
+        };
+    });
+    return shareableCapsules;
+    };
+    public shared ({ caller }) func updateCapsule(capsuleId: TimeCapsuleId, newContent: TimeCapsuleContentType, newUnlockDate: UnlockDate) : async Result<(), Text> {
+    switch (capsuleLedger.get(capsuleId)) {
+        case (null) {
+            return #err("Capsule does not exist");
+        };
+        case (?capsule) {
+            if (caller != capsule.owner) {
+                return #err("Only the owner can update the capsule");
             };
-            case(?member){
-                switch(capsuleLedger.get(capsuleId)){
-                    case(null){
-                        return #err("Capsule does not exist");
-                    };
-                    case(?capsule){
-                        let alreadyFollowing = Array.find<TimeCapsuleId>(member.following, func (id) : Bool { id == capsuleId }) != null;
-                        switch(alreadyFollowing){
-                            case(true){
-                                return #err("Already following this capsule");
-                            };
-                            case(false){
-                                let updatedFollowing = Array.append<TimeCapsuleId>(member.following, [capsuleId]);
-                                let updatedMember = {
-                                    username = member.username;
-                                    bio = member.bio;
-                                    capsules = member.capsules;
-                                    following = updatedFollowing;
-                                };
-                                let updatedFollowers = Array.append<Principal>(capsule.followers, [caller]);
-                                let updatedCapsule = {
-                                    id = capsule.id;
-                                    content = capsule.content;
-                                    owner = capsule.owner; 
-                                    unlockDate = capsule.unlockDate;
-                                    created = capsule.created;
-                                    followers = updatedFollowers;
-                                };
-                                switch (await updateCapsule(capsule.id,updatedCapsule)){
-                                    case(#ok){return #ok()};
-                                    case(_){return #err("error following capusule")};
-                                };
-                                switch (await updateMember(updatedMember)){
-                                    case(#ok){return #ok()};
-                                    case(_){return #err("error following capusule")};
-                                };
-                            };
+            let updatedCapsule = {
+                id = capsule.id;
+                content = newContent;
+                owner = capsule.owner; 
+                unlockDate = newUnlockDate;
+                created = capsule.created; 
+                followers = capsule.followers; 
+            };
+            capsuleLedger.put(capsuleId, updatedCapsule);
+            return #ok();
+            };
+        };
+    };
+
+    public shared({caller}) func followCapsule(capsuleId: TimeCapsuleId) : async Result<(), Text> {
+    switch(dao.get(caller)) {
+        case (null) {
+            return #err("The caller is not a member - cannot follow the capsule");
+        };
+        case (?member) {
+            switch(capsuleLedger.get(capsuleId)) {
+                case (null) {
+                    return #err("Capsule does not exist");
+                };
+                case (?capsule) {
+                    let alreadyFollowing = Array.find<TimeCapsuleId>(Buffer.toArray(member.following),func (id : TimeCapsuleId) : Bool { id == capsuleId }) != null;
+
+                    if (alreadyFollowing) {
+                        return #err("Already following this capsule");
+                    } else {
+                        member.following.add(capsuleId);
+                        capsule.followers.add(caller);
+                        return #ok();
                         };
                     };
+                };
+            };
+        };
+    };
+
+
+    public shared({caller}) func lockCapsule(capsuleId: TimeCapsuleId, duration: Int) : async Result<(), Text> {
+    switch (capsuleLedger.get(capsuleId)) {
+        case (null) {
+            return #err("Capsule does not exist");
+        };
+        case (?capsule) {
+            if (caller != capsule.owner) {
+                return #err("Only the owner can lock the capsule");
+            };
+            let newUnlockDate = Time.now() + (duration * 1_000_000_000); // Convert seconds to nanoseconds
+            if (newUnlockDate <= capsule.unlockDate) {
+                return #err("New unlock date must be greater than the current unlock date");
+            };
+            let updatedCapsule = {
+                capsule with
+                unlockDate = newUnlockDate;
+            };
+            capsuleLedger.put(capsuleId, updatedCapsule);
+            return #ok();
+            };
+        };
+    };
+
+    public shared({caller})func unlockCapsule(capsuleId: TimeCapsuleId) : async Result<(), Text> {
+    switch (capsuleLedger.get(capsuleId)) {
+        case (null) {
+            return #err("Capsule does not exist");
+        };
+        case (?capsule) {
+            if (caller != capsule.owner) {
+                return #err("Only the owner can unlock the capsule");
+            };
+            if (Time.now() < capsule.unlockDate) {
+                return #err("Capsule is locked");
+            } else {
+                let updatedCapsule = {
+                capsule with
+                unlockDate = Time.now(); // Set unlock date to now, making it accessible
+                };
+                capsuleLedger.put(capsuleId, updatedCapsule);
+                return #ok();
                 };
             };
         };

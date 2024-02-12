@@ -1,6 +1,7 @@
 import Principal "mo:base/Principal";
 import Time "mo:base/Time";
 import Nat "mo:base/Nat";
+import Buffer "mo:base/Buffer";
 import Result "mo:base/Result";
 import HashMap "mo:base/HashMap";
 module {
@@ -11,11 +12,18 @@ module {
     // Member //
     ////////////
     public type Member = {
-        username: Text;
-        bio : Text;
-        capsules: [TimeCapsuleId];
-        following: [TimeCapsuleId];
-    };
+    username: Text;
+    bio: Text;
+    capsules: Buffer.Buffer<TimeCapsuleId>;
+    following: Buffer.Buffer<TimeCapsuleId>;
+};
+public type ShareableMember = {
+    username: Text;
+    bio: Text;
+    capsules: [TimeCapsuleId];
+    following: [TimeCapsuleId];
+};
+
 
     ///////////////////
     // Time Capsule //
@@ -35,14 +43,22 @@ module {
     tags: [Text]; // Optional tags for categorization or search
     };
 
-    public type TimeCapsule = {
-        id: TimeCapsuleId;
-        content: TimeCapsuleContentType; // Encrypted content
-        owner: Principal;
-        unlockDate: UnlockDate;
-        created: Time.Time;
-        followers: [Principal];
-    };
+   public type TimeCapsule = {
+    id: TimeCapsuleId;
+    content: TimeCapsuleContentType; 
+    owner: Principal;
+    unlockDate: UnlockDate;
+    created: Time.Time;
+    followers: Buffer.Buffer<Principal>;
+};
+public type SharedTimeCapsule = {
+    id: TimeCapsuleId;
+    content: TimeCapsuleContentType;
+    owner: Principal;
+    unlockDate: UnlockDate;
+    created: Time.Time;
+    followers: [Principal]; // Array instead of Buffer
+};
 
     ///////////////////
     // Proposal //
