@@ -46,6 +46,9 @@ actor timeCapsuleDAO {
     public shared query func getGoals() : async [Text] {
         Buffer.toArray(goals);
     };
+    public shared query func getRequests() : async [Text] {
+        Buffer.toArray(requests);
+    };
     let tcnledger = HashMap.HashMap<Principal, Nat>(0, Principal.equal, Principal.hash);
     public query func tokenName() : async Text {
         return "Time Capsule Network";
@@ -83,6 +86,28 @@ actor timeCapsuleDAO {
 
     public query func balanceOf(owner : Principal) : async Nat {
         return (Option.get(tcnledger.get(owner), 0));
+    };
+    func _hasVoted(proposal : Proposal, member : Principal) : Bool {
+        return Array.find<Vote>(
+            proposal.votes,
+            func(vote : Vote) {
+                return vote.member == member;
+            },
+        ) != null;
+    };
+     func _executeProposal(content : ProposalContent) : () {
+        switch (content) {
+            case (#ChangeManifesto(newManifesto)) {
+                manifesto := newManifesto;
+            };
+            case (#AddGoal(newGoal)) {
+                goals.add(newGoal);
+            };
+            case(#FeatureRequest(newRequest)){
+                requests.add(newRequest);
+            };
+        };
+        return;
     };
 
     public query func totalSupply() : async Nat {
@@ -166,7 +191,6 @@ actor timeCapsuleDAO {
     };
 
     public query func getAllMembers() : async [ShareableMember] {
-    // Convert each Member instance in the dao to a ShareableMember
     let shareableMembers : [ShareableMember] = Array.map(
         Iter.toArray(dao.vals()),
         func (member : Member) : ShareableMember {
@@ -226,34 +250,6 @@ actor timeCapsuleDAO {
         };
     };
     
-    public query func getProposal(proposalId : ProposalId) : async ?Proposal {
-        return proposals.get(proposalId);
-    };
-    public query func getAllProposals() : async [Proposal] {
-        return Iter.toArray(proposals.vals());
-    };
-    private func _executeProposal(content : ProposalContent) : () {
-        switch (content) {
-            case (#ChangeManifesto(newManifesto)) {
-                manifesto := newManifesto;
-            };
-            case (#AddGoal(newGoal)) {
-                goals.add(newGoal);
-            };
-            case(#FeatureRequest(newRequest)) {
-                requests.add(newRequest);
-            };
-        };
-        return;
-    };
-    private func _hasVoted(proposal : Proposal, member : Principal) : Bool {
-        return Array.find<Vote>(
-            proposal.votes,
-            func(vote : Vote) {
-                return vote.member == member;
-            },
-        ) != null;
-    };
     public shared ({ caller }) func voteProposal(proposalId : ProposalId, vote : Vote) : async Result<(), Text> {
         // Check if the caller is a member of the DAO
         switch (dao.get(caller)) {
@@ -270,12 +266,13 @@ actor timeCapsuleDAO {
                         // Check if the proposal is open for voting
                         if (proposal.status != #Open) {
                             return #err("The proposal is not open for voting");
-                        };
-                        // Check if the caller has already voted
-                        if (_hasVoted(proposal, caller)) {
-                            return #err("The caller has already voted on this proposal");
-                        };
-                        let votingPower = await balanceOf(caller);
+                        }else {
+                            switch(_hasVoted(proposal, caller)){
+                                case(true) {
+                                    return #err("The caller has already voted on this proposal");
+                                };
+                                case(false) {
+                                      let votingPower = await balanceOf(caller);
                         let totalVotingPower = await totalSupply();
                         var newYesVotes = proposal.yesVotes;
                         var newNoVotes = proposal.noVotes;
@@ -302,10 +299,7 @@ actor timeCapsuleDAO {
                             case (_) {};
                         };
                         let newProposal : Proposal = {
-                            id = proposal.id;
-                            content = proposal.content;
-                            creator = proposal.creator;
-                            created = proposal.created;
+                            proposal with
                             executed = newExecuted;
                             votes = Buffer.toArray(newVotes);
                             voteScore = newVoteScore;
@@ -315,10 +309,16 @@ actor timeCapsuleDAO {
                         };
                         proposals.put(proposal.id, newProposal);
                         return #ok();
+                                };
+                            };
+                        };
                     };
                 };
             };
         };
+    };
+    public query func getAllProposals() : async [Proposal] {
+        return Iter.toArray(proposals.vals());
     };
 
     var nextCapsuleId : Nat64 = 0;
@@ -428,7 +428,7 @@ actor timeCapsuleDAO {
             owner = capsule.owner;
             unlockDate = capsule.unlockDate;
             created = capsule.created;
-            followers = Buffer.toArray(capsule.followers); 
+            followers = Buffer.toArray(capsule.followers);
         };
     });
     return shareableCapsules;

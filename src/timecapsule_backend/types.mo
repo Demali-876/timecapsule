@@ -94,5 +94,4 @@ public type SharedTimeCapsule = {
         votingPower: Nat;
         yesOrNo: Bool; // true = yes, false = no
     };
-    
 };
