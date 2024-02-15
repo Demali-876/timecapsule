@@ -1,20 +1,9 @@
-import {
-    createActor,
-    timecapsule_backend,
-} from "../../declarations/timecapsule_backend";
+import {createActor, timecapsule_backend,} from "../../declarations/timecapsule_backend";
 import { AuthClient } from "@dfinity/auth-client";
 import { HttpAgent } from "@dfinity/agent";
 let actor = timecapsule_backend;
 console.log(process.env.CANISTER_ID_INTERNET_IDENTITY);
-const whoAmIButton = document.getElementById("whoAmI");
-whoAmIButton.onclick = async (e) => {
-    e.preventDefault();
-    whoAmIButton.setAttribute("disabled", true);
-    const principal = await actor.whoami();
-    whoAmIButton.removeAttribute("disabled");
-    document.getElementById("principal").innerText = principal.toString();
-    return false;
-};
+
 const loginButton = document.getElementById("login");
 loginButton.onclick = async (e) => {
     e.preventDefault();
@@ -36,4 +25,3 @@ loginButton.onclick = async (e) => {
     });
     return false;
 };
-

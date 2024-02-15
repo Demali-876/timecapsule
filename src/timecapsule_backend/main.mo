@@ -11,29 +11,33 @@ import Types "types";
 import Array "mo:base/Array";
 
 actor timeCapsuleDAO {
+    
+    type Member = Types.Member;
+    type Result<Ok, Err> = Types.Result<Ok, Err>;
+    type HashMap<K, V> = Types.HashMap<K, V>;
+    type Proposal = Types.Proposal;
+    type ProposalContent = Types.ProposalContent;
+    type ProposalId = Types.ProposalId;
+    type Vote = Types.Vote;
+    type ShareableMember = Types.ShareableMember;
+    type SharedTimeCapsule = Types.SharedTimeCapsule;
+    type TimeCapsuleId = Types.TimeCapsuleId;
+    type UnlockDate = Types.UnlockDate;
+    type TimeCapsuleContentType = Types.TimeCapsuleContentType;
+    type StructuredContent = Types.StructuredContent;
+    type TimeCapsule = Types.TimeCapsule;
+    type ProposalStatus = Types.ProposalStatus;
 
-  type Member = Types.Member;
-  type Result<Ok, Err> = Types.Result<Ok, Err>;
-  type HashMap<K, V> = Types.HashMap<K, V>;
-  type Proposal = Types.Proposal;
-  type ProposalContent = Types.ProposalContent;
-  type ProposalId = Types.ProposalId;
-  type Vote = Types.Vote;
-  type ShareableMember = Types.ShareableMember;
-  type SharedTimeCapsule = Types.SharedTimeCapsule;
-  type TimeCapsuleId = Types.TimeCapsuleId;
-  type UnlockDate = Types.UnlockDate;
-  type TimeCapsuleContentType = Types.TimeCapsuleContentType;
-  type StructuredContent = Types.StructuredContent;
-  type TimeCapsule = Types.TimeCapsule;
-  type ProposalStatus = Types.ProposalStatus;
+    let name = "Time Capsule Network";
+    var manifesto = " To preserve and share humanity's collective memory across generations by leveraging blockchain technology";
+    let goals = Buffer.Buffer<Text>(0);
+    let requests = Buffer.Buffer<Text>(0);
 
-  let name = "Time Capsule Network";
-  var manifesto = " To preserve and share humanity's collective memory across generations by leveraging blockchain technology";
-  let goals = Buffer.Buffer<Text>(0);
-  let requests = Buffer.Buffer<Text>(0);
+    public shared (msg) func whoami() : async Principal {
+        msg.caller
+    };
 
-  public shared query func getName() : async Text {
+    public shared query func getName() : async Text {
         return name;
     };
     public shared query func getManifesto() : async Text {
