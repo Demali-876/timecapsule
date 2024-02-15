@@ -78,6 +78,9 @@ cd timecapsule/
 # Starts the replica
 dfx start --clean
 
+#Deploy Internet Identity Canister
+dfx  deps deploy 
+
 # Deploys canisters to the replica and generates  candid interface
 dfx deploy timecapsule
 ```
