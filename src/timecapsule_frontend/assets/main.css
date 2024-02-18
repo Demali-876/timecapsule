@@ -65,6 +65,28 @@ body, html {
     padding: 20px;
     margin-left: 210px; 
     margin-top: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+.content h1, .content h2 {
+    color: #007bff; /* A pleasant blue for headings */
+}
+.content p, .content li {
+    line-height: 1.6; /* Improved readability */
+}
+.content ul {
+    list-style-type: none; /* Removing default list style */
+    padding: 0;
+}
+.content li {
+    background: #f0f0f0; /* Light grey background for list items */
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 5px; /* Soften the corners */
+}
+.content li strong {
+    color: #333; /* Darker text for emphasis */
 }
 
 footer {
