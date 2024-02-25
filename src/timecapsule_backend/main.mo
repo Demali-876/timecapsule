@@ -9,6 +9,7 @@ import Nat64 "mo:base/Nat64";
 import Nat32 "mo:base/Nat32";
 import Types "types";
 import Array "mo:base/Array";
+import Token "token";
 
 actor timeCapsuleDAO {
     

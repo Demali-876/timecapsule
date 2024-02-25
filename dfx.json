@@ -4,7 +4,7 @@
       "main": "src/timecapsule_backend/main.mo",
       "type": "motoko"
     },
-    "internet_identity" : {
+    "internet_identity": {
       "type": "pull",
       "id": "rdmx6-jaaaa-aaaaa-aaadq-cai"
     },
@@ -25,7 +25,7 @@
   "defaults": {
     "build": {
       "args": "",
-      "packtool": "vessel sources"
+      "packtool": "mops sources"
     }
   },
   "output_env_file": ".env",
